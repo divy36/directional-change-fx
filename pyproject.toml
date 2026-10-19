@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "directional-change-fx"
+version = "1.0.0"
+description = "Alpha Coastline Trader: directional-change FX backtesting"
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.24,<3", "pandas>=2,<3"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<9"]
+plots = ["matplotlib>=3.7,<4"]
+
+[project.scripts]
+dc-fx = "dc_fx.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
