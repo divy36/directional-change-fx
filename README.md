@@ -19,6 +19,24 @@ For a local HistData tick file:
 dc-fx --input data/ticks.csv --one-way-cost 0.00002 --output output
 ```
 
+To reverse the original execution side while keeping signal timing:
+
+```bash
+dc-fx --input data/ticks.csv --reverse --output output/reverse
+```
+
+The researched reversal candidate also widens thresholds, delays overshoot entries,
+and disables inventory adjustment:
+
+```bash
+dc-fx --input data/ticks.csv --reverse --threshold-multiplier 2 \
+  --osv-levels 1 2 --no-inventory-adjustment --one-way-cost 0.00002 \
+  --output output/reversal-candidate
+```
+
+These settings are opt-in; the original strategy remains the default. See
+[reversal research](docs/reversal-research.md) for development and validation results.
+
 Outputs: trade ledger, daily liquidation equity, and JSON metrics. Use `--strategy coastline` or `--strategy alpha` for single-scale variants; the default is the inventory-aware four-scale engine.
 
 ## Project
@@ -39,4 +57,4 @@ Outputs: trade ledger, daily liquidation equity, and JSON metrics. Use `--strate
 
 See [corrections](docs/corrections.md), [methodology](docs/methodology.md), and [results](docs/results.md).
 
-The four historical samples lose money after assumed costs. This is a research backtester with same-tick mid-price fills and fixed costs; it is not connected to a broker. Vendor tick files and the original coursework notebook are not distributed.
+The default strategy loses money on the four original historical samples after assumed costs. This is a research backtester with same-tick mid-price fills and fixed costs; it is not connected to a broker. Vendor tick files and the original coursework notebook are not distributed.

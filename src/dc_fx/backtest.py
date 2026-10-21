@@ -26,12 +26,21 @@ TRADE_COLUMNS = [
 
 @dataclass(frozen=True)
 class Config:
+    """Strategy settings.
+
+    ``execution_sign`` selects whether orders follow (+1) or fade (-1) the
+    detector's signal. Inventory remains measured in signal-direction units;
+    that inventory controls the original threshold and sizing adjustments in
+    either execution mode.
+    """
+
     theta_up: float = 0.0005
     theta_down: float = 0.0004
     osv_levels: Tuple[float, ...] = (0.5, 1.0)
     position_unit: float = 0.25
     one_way_cost: float = 0.00002
     inventory_adjustment: bool = True
+    execution_sign: int = 1
 
     def __post_init__(self):
         values = [self.theta_up, self.theta_down, self.position_unit, self.one_way_cost]
@@ -41,6 +50,8 @@ class Config:
             raise ValueError("Finite thresholds must be between 0 and 0.5")
         if self.position_unit <= 0 or self.one_way_cost < 0:
             raise ValueError("Position unit must be positive and cost nonnegative")
+        if isinstance(self.execution_sign, bool) or self.execution_sign not in (-1, 1):
+            raise ValueError("Execution sign must be +1 or -1")
         levels = np.asarray(self.osv_levels, dtype=float)
         if (
             levels.ndim != 1
@@ -95,17 +106,20 @@ def run_strategy(prices, timestamps, config=None):
         return Result(pd.DataFrame(columns=TRADE_COLUMNS), curve)
     detector = Detector(prices[0])
     capital = 1.0
+    # Signal direction owns detector state, exit timing, and signal inventory.
+    # Execution direction only changes the position's signed P&L and label.
     direction, anchor, next_level, inventory = 0, 0.0, 0, 0.0
     entries = []
     quantity = basis = costs = 0.0
 
     def close(i, reason):
-        pnl = direction * (quantity * prices[i] - basis) - costs
+        execution_direction = direction * config.execution_sign
+        pnl = execution_direction * (quantity * prices[i] - basis) - costs
         trades.append(
             {
                 "entry_time": entries[0][2],
                 "exit_time": times[i],
-                "direction": "LONG" if direction == 1 else "SHORT",
+                "direction": "LONG" if execution_direction == 1 else "SHORT",
                 "n_entries": len(entries),
                 "total_size": sum(e[1] for e in entries),
                 "avg_entry_px": basis / quantity,
@@ -144,7 +158,8 @@ def run_strategy(prices, timestamps, config=None):
                 costs += units * 2 * config.one_way_cost
                 inventory += direction * unit
                 next_level += 1
-        curve[i] = capital + direction * (quantity * price - basis) - costs
+        execution_direction = direction * config.execution_sign
+        curve[i] = capital + execution_direction * (quantity * price - basis) - costs
         if curve[i] <= 0:
             raise ValueError(
                 "Account exhausted; reduce exposure before running this configuration"
@@ -155,13 +170,38 @@ def run_strategy(prices, timestamps, config=None):
     return Result(pd.DataFrame(trades, columns=TRADE_COLUMNS), curve)
 
 
-def run_engine(prices, timestamps, scales=SCALES, one_way_cost=0.00002):
+def run_engine(
+    prices,
+    timestamps,
+    scales=SCALES,
+    one_way_cost=0.00002,
+    execution_sign=1,
+    threshold_multiplier=1.0,
+    osv_levels=(0.5, 1.0),
+    inventory_adjustment=True,
+):
     prices, times = validate_inputs(prices, timestamps)
     scales = tuple(scales)
     if not scales:
         raise ValueError("At least one scale is required")
+    if isinstance(threshold_multiplier, bool):
+        raise ValueError("Threshold multiplier must be finite and positive")
+    try:
+        threshold_multiplier = float(threshold_multiplier)
+    except (TypeError, ValueError):
+        raise ValueError("Threshold multiplier must be finite and positive") from None
+    if not np.isfinite(threshold_multiplier) or threshold_multiplier <= 0:
+        raise ValueError("Threshold multiplier must be finite and positive")
     configs = [
-        Config(theta_up=u, theta_down=d, one_way_cost=one_way_cost) for u, d in scales
+        Config(
+            theta_up=u * threshold_multiplier,
+            theta_down=d * threshold_multiplier,
+            osv_levels=osv_levels,
+            one_way_cost=one_way_cost,
+            inventory_adjustment=inventory_adjustment,
+            execution_sign=execution_sign,
+        )
+        for u, d in scales
     ]
     equity = np.zeros(len(prices))
     frames = []

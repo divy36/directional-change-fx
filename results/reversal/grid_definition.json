@@ -1,0 +1,36 @@
+{
+  "threshold_multipliers": [
+    1.5,
+    2.0,
+    3.0
+  ],
+  "osv_sets": [
+    [
+      1.0,
+      2.0
+    ],
+    [
+      1.5,
+      2.5
+    ],
+    [
+      2.0,
+      3.0
+    ]
+  ],
+  "inventory_adjustment": [
+    true,
+    false
+  ],
+  "execution_sign": -1,
+  "position_unit": 0.25,
+  "max_entries_per_scale": 2,
+  "portfolio_scale_weights": "four equally weighted subaccounts",
+  "grid_size": 18,
+  "data_scope": [
+    "EURUSD-202510",
+    "EURUSD-202511",
+    "EURUSD-202512",
+    "EURGBP-202602"
+  ]
+}

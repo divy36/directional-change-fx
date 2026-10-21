@@ -1,0 +1,10 @@
+{
+  "development": ["EURUSD-202510", "EURUSD-202511", "EURUSD-202512", "EURGBP-202602"],
+  "validation": ["EURUSD-202501", "EURUSD-202502", "EURUSD-202503", "EURUSD-202505", "EURUSD-202506", "EURUSD-202507"],
+  "validation_type": "Unseen in this research, retrospective; earlier than development, not prospective walk-forward",
+  "selection": "One fixed candidate selected only using development sample results; freeze before validation. No subsequent holdout-driven retuning.",
+  "checks": ["Fixed one-way cost 0.2 pip EURUSD", "Double fixed cost", "Observed bid/ask execution", "One tick delayed observed bid/ask execution"],
+  "success_criteria": "Positive equal-weight mean validation-month return, positive majority of six months, and positive equal-weight mean under delayed observed bid/ask execution; report every month and all failures. This is evidence of a candidate, not a promise of live profitability.",
+  "exposure": "No leverage increase; at most two 0.25 tranches, maximum nominal allocated fraction 0.5",
+  "monthly_policy": "Reset strategy and capital at each sample start, force liquidation at each sample end. Not a continuous capital or position simulation."
+}

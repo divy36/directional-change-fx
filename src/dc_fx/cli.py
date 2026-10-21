@@ -24,6 +24,28 @@ def main():
         help="Absolute price units per side; 0.00002 = 0.2 pip for EURUSD",
     )
     parser.add_argument(
+        "--reverse",
+        action="store_true",
+        help="Fade detector signals while preserving their timing and thresholds",
+    )
+    parser.add_argument(
+        "--threshold-multiplier",
+        type=float,
+        default=1.0,
+        help="Multiply all configured directional-change thresholds",
+    )
+    parser.add_argument(
+        "--osv-levels",
+        type=float,
+        nargs="+",
+        help="Replace the strategy's default overshoot entry levels",
+    )
+    parser.add_argument(
+        "--no-inventory-adjustment",
+        action="store_true",
+        help="Disable inventory-based threshold and sizing adjustments",
+    )
+    parser.add_argument(
         "--deduplicate",
         action="store_true",
         help="Keep first tick per timestamp for legacy comparisons",
@@ -35,16 +57,34 @@ def main():
     else:
         ticks, audit = load_ticks(args.input, args.deduplicate)
     if args.strategy == "engine":
+        selected_osv_levels = tuple(args.osv_levels or (0.5, 1.0))
+        inventory_adjustment = not args.no_inventory_adjustment
+    else:
+        selected_osv_levels = tuple(
+            args.osv_levels
+            if args.osv_levels is not None
+            else ((1.0, 2.0) if args.strategy == "coastline" else (0.5, 1.0))
+        )
+        inventory_adjustment = False
+    if args.strategy == "engine":
         result, _ = run_engine(
-            ticks.mid.to_numpy(), ticks.index, one_way_cost=args.one_way_cost
+            ticks.mid.to_numpy(),
+            ticks.index,
+            one_way_cost=args.one_way_cost,
+            execution_sign=-1 if args.reverse else 1,
+            threshold_multiplier=args.threshold_multiplier,
+            osv_levels=selected_osv_levels,
+            inventory_adjustment=inventory_adjustment,
         )
     else:
         config = Config(
-            theta_up=0.001,
-            theta_down=0.001 if args.strategy == "coastline" else 0.0008,
-            osv_levels=(1.0, 2.0) if args.strategy == "coastline" else (0.5, 1.0),
-            inventory_adjustment=False,
+            theta_up=0.001 * args.threshold_multiplier,
+            theta_down=(0.001 if args.strategy == "coastline" else 0.0008)
+            * args.threshold_multiplier,
+            osv_levels=selected_osv_levels,
+            inventory_adjustment=inventory_adjustment,
             one_way_cost=args.one_way_cost,
+            execution_sign=-1 if args.reverse else 1,
         )
         result = run_strategy(ticks.mid.to_numpy(), ticks.index, config)
     args.output.mkdir(parents=True, exist_ok=True)
@@ -55,6 +95,10 @@ def main():
     report = {
         "strategy": args.strategy,
         "one_way_cost": args.one_way_cost,
+        "reverse": args.reverse,
+        "threshold_multiplier": args.threshold_multiplier,
+        "osv_levels": selected_osv_levels,
+        "inventory_adjustment": inventory_adjustment,
         "data_audit": audit,
         **performance(result, ticks.index),
     }

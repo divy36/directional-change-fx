@@ -1,0 +1,1 @@
+The grid was specified before the grid run. The ranking and 100-average-trades cutoff were chosen during development, not preregistered. The candidate and validation gate were frozen before reading the six reserved months. selected.json is retained unchanged to preserve the hash recorded in holdout_results.csv. No holdout-driven retuning was performed.

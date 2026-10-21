@@ -33,3 +33,20 @@ Drawdown uses tick-level liquidation equity with initial capital 1 included in t
 ## Research helpers
 
 `dc_fx.research.scaling_diagnostics(prices, timestamps, thresholds)` reports event counts, mean completed overshoot/threshold ratios, and paired OS/DC duration ratios in tick counts. Zero overshoots are included; incomplete final legs are excluded. These are empirical diagnostics, not proof of universal scaling laws. `baseline_sensitivity` replays symmetric baseline thresholds using the corrected accounting and metrics.
+
+## Reversed execution and experimental settings
+
+`execution_sign=-1` (CLI `--reverse`) reverses executed LONG/SHORT labels and
+price-movement P&L while costs remain expenses. Detector direction, overshoot
+measurement, exit timing, and signal-side inventory stay unchanged. Consequently,
+reverse execution does not mean feeding actual reversed inventory back into the
+original threshold adjustment. The researched candidate disables that adjustment.
+Each account compounds its own net returns; reversed quantities can differ from
+baseline quantities after the first completed position.
+
+`--threshold-multiplier`, `--osv-levels`, and `--no-inventory-adjustment` expose
+experimental settings without changing defaults. The reversal research candidate
+uses multiplier 2, levels 1 and 2, and no inventory adjustment. Tranche allocation
+remains 25% of each subaccount's capital at the position start, at most two
+tranches. This is an entry-budget limit, not a hard mark-to-market leverage limit.
+See [reversal research](reversal-research.md) for results and execution stresses.

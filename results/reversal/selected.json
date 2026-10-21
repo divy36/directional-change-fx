@@ -1,0 +1,26 @@
+{
+  "candidate": "m2_osv1_inv0",
+  "threshold_multiplier": 2.0,
+  "osv_levels": [1.0, 2.0],
+  "inventory_adjustment": false,
+  "execution_sign": -1,
+  "base_position_unit": 0.25,
+  "scales": [
+    [0.001, 0.0008],
+    [0.002, 0.0016],
+    [0.003, 0.0024],
+    [0.005, 0.004]
+  ],
+  "one_way_cost": {
+    "EURUSD": 0.00002,
+    "EURGBP": 0.00004
+  },
+  "selection_rule": "Among the 18 prespecified grid candidates with positive net returns in all four development samples and mean trade count of at least 100 per sample, select the candidate with the highest arithmetic mean net return; ties would be broken by lower mean absolute maximum drawdown, then higher mean trade count. This selects m2_osv1_inv0 (mean return 0.1913%, minimum sample return 0.1026%, mean absolute maximum drawdown 0.1366%, mean trade count 128.75).",
+  "development_samples": [
+    "EURUSD-202510",
+    "EURUSD-202511",
+    "EURUSD-202512",
+    "EURGBP-202602"
+  ],
+  "holdout_status": "Not evaluated here; selection frozen before independent validation."
+}
